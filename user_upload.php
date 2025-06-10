@@ -125,9 +125,13 @@ if ($header === false) {
 // Expecting header to contain: name, surname, email (case insensitive)
 $header = array_map('strtolower', $header);
 $expectedHeaders = ['name', 'surname', 'email'];
+$expectedHeaders = ['name', 'surname', 'email'];
+
 foreach ($expectedHeaders as $col) {
+    
     if (!in_array($col, $header)) {
         fwrite(STDERR, "CSV missing expected column '$col'\n");
+        //print_r($col);die();
         exit(1);
     }
 }
@@ -169,13 +173,18 @@ while (($data = fgetcsv($handle)) !== false) {
     }
 
     // Bind parameters and execute insert
-    $stmt->bind_param("sss", $name, $surname, $email);
-    if (!$stmt->execute()) {
-        fwrite(STDOUT, "Row $rowNum: Failed to insert: " . $stmt->error . "\n");
-        $errorCount++;
+   $stmt->bind_param("sss", $name, $surname, $email);
+if (!$stmt->execute()) {
+    if (str_contains($stmt->error, 'Duplicate entry')) {
+        fwrite(STDOUT, "Row $rowNum: Duplicate email '$email'. Skipping.\n");
     } else {
-        $insertCount++;
+        fwrite(STDOUT, "Row $rowNum: Failed to insert: " . $stmt->error . "\n");
     }
+    $errorCount++;
+} else {
+    $insertCount++;
+}
+
 }
 
 fclose($handle);
